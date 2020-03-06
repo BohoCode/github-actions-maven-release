@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
+echo `env`
+
 # avoid the release loop by checking if the latest commit is a release commit
 readonly local last_release_commit_hash=$(git log --author="$GIT_RELEASE_BOT_NAME" --pretty=format:"%H" -1)
 echo "Last $GIT_RELEASE_BOT_NAME commit: ${last_release_commit_hash}"
@@ -45,15 +47,19 @@ if [[ $GPG_ENABLED == "true" ]]; then
 else
   echo "GPG signing is not enabled"
 fi
+
+
 echo "Override the java home as gitactions is seting up the JAVA_HOME env variable"
 JAVA_HOME="/usr/local/openjdk-11/"
+
 # Setup maven local repo
 if [[ -n "$MAVEN_LOCAL_REPO_PATH" ]]; then
      MAVEN_REPO_LOCAL="-Dmaven.repo.local=$MAVEN_LOCAL_REPO_PATH"
 fi
 
 # Do the release
-echo "Do mvn release:prepare with arguments $MAVEN_ARGS"
-mvn $MAVEN_REPO_LOCAL -Dusername=$GITHUB_ACCESS_TOKEN release:prepare -B -Darguments="$MAVEN_ARGS"
-echo "Do mvn release:perform with arguments $MAVEN_ARGS"
-mvn $MAVEN_REPO_LOCAL release:perform -B -Darguments="$MAVEN_ARGS"
+echo "MAVEN_REPO_LOCAL is $MAVEN_REPO_LOCAL"
+echo "Do mvn release:prepare with arguments $MAVEN_REPO_LOCAL $MAVEN_ARGS"
+mvn -X $MAVEN_REPO_LOCAL -Dusername=$GITHUB_ACCESS_TOKEN release:prepare -B -Darguments="$MAVEN_ARGS"
+echo "Do mvn release:perform with arguments $MAVEN_REPO_LOCAL $MAVEN_ARGS"
+mvn -X $MAVEN_REPO_LOCAL release:perform -B -Darguments="$MAVEN_ARGS"
